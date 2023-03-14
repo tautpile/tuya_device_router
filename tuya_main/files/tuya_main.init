@@ -1,0 +1,37 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+
+start_service() {
+        local enabled
+	local device_id
+	local secret
+	local product_id
+
+        config_load 'example'
+        config_load 'tuya_main'
+        config_get enabled tuya_sct 'enable' '0'
+	config_get device_id tuya_sct 'text_deviceid' ''
+	config_get secret tuya_sct 'text_devicesecret' ''
+	config_get product_id tuya_sct 'text_productid' ''
+
+	if [ "$enabled" -eq 1 ]; then
+	        procd_open_instance
+	        procd_set_param command /usr/bin/tuya_main
+		procd_append_param command -i "$device_id"
+		procd_append_param command -s "$secret"
+		procd_append_param command -p "$product_id"
+	        procd_set_param pidfile /var/run/tuya_main.pid
+		procd_set_param file /etc/config/tuya_main
+        	procd_close_instance
+	fi
+}
+
+service_triggers() {
+	procd_add_reload_trigger "tuya_main"
+}
+
+reload_service() {
+	stop
+	start
+}
